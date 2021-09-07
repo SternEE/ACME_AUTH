@@ -5,6 +5,8 @@ const config = {
 };
 const jwt = require("jsonwebtoken");
 const SECRET_KEY = process.env.JWT;
+const bcrypt = require("bcrypt");
+const saltRounds = 10;
 
 if (process.env.LOGGING) {
     delete config.logging;
@@ -18,6 +20,10 @@ const User = conn.define("user", {
     username: STRING,
     password: STRING
 });
+
+User.addHook('beforeCreate', async (user) => {
+    user.password = await bcrypt.hash(user.password, saltRounds)
+})
 
 User.byToken = async (token) => {
     try {
@@ -40,12 +46,11 @@ User.byToken = async (token) => {
 User.authenticate = async ({ username, password }) => {
     const user = await User.findOne({
         where: {
-            username,
-            password
+            username
         }
     });
 
-    if (user) {
+    if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign(
             { id: user.id, username: user.username },
             SECRET_KEY
