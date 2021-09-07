@@ -21,9 +21,16 @@ const User = conn.define("user", {
     password: STRING
 });
 
-User.addHook('beforeCreate', async (user) => {
-    user.password = await bcrypt.hash(user.password, saltRounds)
-})
+const Note = conn.define("note", {
+    text: STRING
+});
+
+Note.belongsTo(User);
+User.hasMany(Note);
+
+User.addHook("beforeCreate", async (user) => {
+    user.password = await bcrypt.hash(user.password, saltRounds);
+});
 
 User.byToken = async (token) => {
     try {
@@ -73,6 +80,15 @@ const syncAndSeed = async () => {
     const [lucy, moe, larry] = await Promise.all(
         credentials.map((credential) => User.create(credential))
     );
+
+    const notes = [{ text: "note-1" }, { text: "note-2" }, { text: "note-3" }];
+    const [note1, note2, note3] = await Promise.all(
+        notes.map((note) => Note.create(note))
+    );
+
+    await lucy.setNotes([note1, note2, note3]);
+    await moe.setNotes([note2]);
+
     return {
         users: {
             lucy,
@@ -85,6 +101,7 @@ const syncAndSeed = async () => {
 module.exports = {
     syncAndSeed,
     models: {
-        User
+        User,
+        Note
     }
 };

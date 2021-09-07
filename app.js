@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 app.use(express.json());
 const {
-    models: { User }
+    models: { User, Note }
 } = require("./db");
 const path = require("path");
 
@@ -13,6 +13,24 @@ app.post("/api/auth", async (req, res, next) => {
         res.send({ token: await User.authenticate(req.body) });
     } catch (ex) {
         next(ex);
+    }
+});
+
+app.get("/api/users/:id/notes", async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        // const user = await User.findAll({
+        //     where: { id },
+        //     include: { model: Note }
+        // });
+        const notes = await Note.findAll({
+            where: { userId: id }
+        });
+        // console.log("NOTES >", notes);
+
+        res.send(notes);
+    } catch (err) {
+        next(err);
     }
 });
 
